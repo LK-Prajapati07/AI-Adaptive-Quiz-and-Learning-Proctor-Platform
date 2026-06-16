@@ -1,0 +1,73 @@
+import mongoose from "mongoose";
+
+const certificateSchema=new mongoose.Schema({
+    userId:{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"Auth",
+        required:true
+    },
+    quizId:{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"Quiz",
+    },
+    competitionId:{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"LiveCompetition",
+    },
+    resultId:{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"Result",
+        required:true
+    },
+    certificateId:{
+        type:String,
+        required:true
+    },
+    title:{
+        type:String,
+        required:true
+    },
+    description:{
+        type:String
+    },
+    score:{
+        type:Number
+    },
+    percentage:{
+        type:Number
+    },
+    grade:{
+        type:String
+    },
+    rank:{
+        type:Number
+    },
+    certificateUrl:{
+        type:String,
+        required:true
+    },
+    certificateTemplate:{
+        type:String
+    },
+    verificationCode:{
+        type:String,
+        unique:true
+    },
+    isValid:{
+        type:Boolean,
+        default:true
+    },
+    issuedAt :{
+        type:Date.now
+    },
+    issuedBy :{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"Auth",
+        required:true
+    }
+},
+{
+    timestamps:true
+}
+)
+export const Certificate=mongoose.model("Certificate",certificateSchema)

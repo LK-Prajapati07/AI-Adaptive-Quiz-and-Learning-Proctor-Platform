@@ -1,0 +1,70 @@
+import mongoose from "mongoose";
+
+const notificationSchema=new mongoose.Schema({
+    userId:{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"Auth",
+        required:true
+    },
+    senderId:{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"Auth",
+        required:true
+    },
+    title:{
+        type:String,
+        required:true
+    },
+    message:{
+        type:String,
+        required:true
+    },
+    type:{
+        type:String,
+        enum:["QUIZ_CREATED","QUIZ_ASSIGNED","RESULT_PUBLISHED","CERTIFICATE_GENERATED","LIVE_COMPETITION","PROCTOR_WARNING","SYSTEM"],
+        required:true
+    },
+    quizId:{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"Quiz",
+        required:true
+    },
+    competitionId:{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"LiveCompetition",
+        required:true
+    },
+    resultId:{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"Result",
+        required:true
+    },
+    certificateId:{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"Certificate",
+        required:true
+    },
+    status:{
+        type:String,
+        enum:["isRead","readAt"],
+        required:true
+    },
+    priority:{
+        type:String,
+        enum:["LOW","Medium","HIGH"],
+        default:"Low"
+    },
+    deliveryType:{
+        type:String,
+        enum:["APP","Email"],
+        default:"APP"
+    },
+    createdAt:{
+        type:String,
+    }
+},
+{
+    timestamps:true
+}
+)
+export const Notification=mongoose.model("Notification",notificationSchema)

@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>
+        AI Proctor Test
+    </title>
+
+
+    <style>
+
+        body{
+            font-family: Arial;
+            padding:20px;
+        }
+
+
+        video{
+
+            border:2px solid black;
+
+            border-radius:10px;
+        }
+
+
+        input{
+
+            padding:10px;
+
+            width:500px;
+
+        }
+
+
+        button{
+
+            padding:10px 20px;
+
+            cursor:pointer;
+
+        }
+
+
+        pre{
+
+            background:#111;
+
+            color:#00ff00;
+
+            padding:20px;
+
+            width:600px;
+
+            min-height:200px;
+
+            overflow:auto;
+        }
+
+
+    </style>
+
+
+</head>
+
+
+
+<body>
+
+
+<h2>
+    AI Proctor Testing
+</h2>
+
+
+
+<!-- Webcam -->
+
+<video
+
+    id="video"
+
+    width="500"
+
+    height="350"
+
+    autoplay
+
+    playsinline>
+
+</video>
+
+
+
+<br><br>
+
+
+
+<!-- Student Image -->
+
+
+<input
+
+    id="profileUrl"
+
+    type="text"
+
+    placeholder="Enter Cloudinary student image URL"
+
+>
+
+
+<br><br>
+
+
+
+<button onclick="checkProctor()">
+
+    Check Proctor
+
+</button>
+
+
+
+<h3>
+    Result
+</h3>
+
+
+<pre id="result">
+
+Waiting...
+
+</pre>
+
+
+
+
+
+<script>
+
+
+// -----------------------------
+// Webcam Start
+// -----------------------------
+
+
+const video =
+    document.getElementById(
+        "video"
+    );
+
+
+
+navigator
+.mediaDevices
+.getUserMedia(
+
+    {
+
+        video:true,
+
+        audio:false
+
+    }
+
+)
+
+.then(
+
+    function(stream){
+
+
+        video.srcObject =
+            stream;
+
+
+        console.log(
+            "Camera Started"
+        );
+
+    }
+
+)
+
+.catch(
+
+    function(error){
+
+
+        console.log(
+            "Camera Error",
+            error
+        );
+
+
+        document
+        .getElementById(
+            "result"
+        )
+        .innerText =
+            error.message;
+
+    }
+
+);
+
+
+
+
+
+
+
+// -----------------------------
+// Send frame to FastAPI
+// -----------------------------
+
+
+async function checkProctor(){
+
+
+    const output =
+        document.getElementById(
+            "result"
+        );
+
+
+    try{
+
+
+        output.innerText =
+            "Analyzing...";
+
+
+
+        // create canvas
+
+        const canvas =
+            document.createElement(
+                "canvas"
+            );
+
+
+
+        canvas.width =
+            video.videoWidth;
+
+
+
+        canvas.height =
+            video.videoHeight;
+
+
+
+        const ctx =
+            canvas.getContext(
+                "2d"
+            );
+
+
+
+        // capture image
+
+        ctx.drawImage(
+
+            video,
+
+            0,
+
+            0,
+
+            canvas.width,
+
+            canvas.height
+
+        );
+
+
+
+
+
+        // canvas to image blob
+
+        const blob =
+            await new Promise(
+
+                resolve =>
+
+                    canvas.toBlob(
+
+                        resolve,
+
+                        "image/jpeg",
+
+                        0.9
+
+                    )
+
+            );
+
+
+
+        console.log(
+
+            "Frame size:",
+
+            blob.size
+
+        );
+
+
+
+
+
+        // prepare form data
+
+
+        const formData =
+            new FormData();
+
+
+
+
+        formData.append(
+
+            "frame",
+
+            blob,
+
+            "frame.jpg"
+
+        );
+
+
+
+
+        const profileUrl =
+
+            document
+
+            .getElementById(
+
+                "profileUrl"
+
+            )
+
+            .value;
+
+
+
+
+        formData.append(
+
+            "student_image_url",
+
+            profileUrl
+
+        );
+
+
+
+
+
+
+        // API request
+
+
+        const response =
+
+            await fetch(
+
+                "http://127.0.0.1:8000/proctor/analyze",
+
+                {
+
+                    method:"POST",
+
+                    body:formData
+
+                }
+
+            );
+
+
+
+
+
+        console.log(
+
+            "API Status:",
+
+            response.status
+
+        );
+
+
+
+
+
+        if(
+
+            response.ok === false
+
+        ){
+
+            throw new Error(
+
+                "Backend Error : "
+
+                +
+
+                response.status
+
+            );
+
+        }
+
+
+
+
+
+
+        const data =
+
+            await response.json();
+
+
+
+
+
+        console.log(
+
+            data
+
+        );
+
+
+
+
+
+
+        // show result
+
+
+        output.innerText =
+
+            JSON.stringify(
+
+                data,
+
+                null,
+
+                4
+
+            );
+
+
+
+    }
+
+
+    catch(error){
+
+
+
+        console.log(
+
+            "ERROR",
+
+            error
+
+        );
+
+
+
+        output.innerText =
+
+            "ERROR : "
+
+            +
+
+            error.message;
+
+
+    }
+
+
+
+}
+
+
+
+</script>
+
+
+
+</body>
+
+
+</html>
