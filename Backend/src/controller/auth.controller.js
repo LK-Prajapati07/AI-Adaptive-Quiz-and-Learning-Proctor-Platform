@@ -6,14 +6,12 @@ export const createUser = async (req, res) => {
     const { idToken,role} = req.body;
     const allowedRoles = ["User", "Trainer", "Recruiter"];
     console.log(idToken)
-
     if (!allowedRoles.includes(role)) {
       return res.status(403).json({
         success: false,
         message: "Invalid role",
       });
     }
-
     if (!idToken) {
       return res.status(401).json({
         success: false,

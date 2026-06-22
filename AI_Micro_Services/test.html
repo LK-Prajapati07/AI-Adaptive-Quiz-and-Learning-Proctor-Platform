@@ -1,268 +1,127 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-
-<head>
-
-    <title>
-        AI Proctor Test
-    </title>
-
+  <head>
+    <title>AI Proctor Test</title>
 
     <style>
+      body {
+        font-family: Arial;
+        padding: 20px;
+      }
 
-        body{
-            font-family: Arial;
-            padding:20px;
-        }
+      video {
+        border: 2px solid black;
 
+        border-radius: 10px;
+      }
 
-        video{
+      input {
+        padding: 10px;
 
-            border:2px solid black;
+        width: 500px;
+      }
 
-            border-radius:10px;
-        }
+      button {
+        padding: 10px 20px;
 
+        cursor: pointer;
+      }
 
-        input{
+      pre {
+        background: #111;
 
-            padding:10px;
+        color: #00ff00;
 
-            width:500px;
+        padding: 20px;
 
-        }
+        width: 600px;
 
+        min-height: 200px;
 
-        button{
-
-            padding:10px 20px;
-
-            cursor:pointer;
-
-        }
-
-
-        pre{
-
-            background:#111;
-
-            color:#00ff00;
-
-            padding:20px;
-
-            width:600px;
-
-            min-height:200px;
-
-            overflow:auto;
-        }
-
-
+        overflow: auto;
+      }
     </style>
+  </head>
 
+  <body>
+    <h2>AI Proctor Testing</h2>
 
-</head>
+    <!-- Webcam -->
 
+    <video id="video" width="500" height="350" autoplay playsinline></video>
 
+    <br /><br />
 
-<body>
+    <!-- Student Image -->
 
+    <input
+      id="profileUrl"
+      type="text"
+      placeholder="Enter Cloudinary student image URL"
+    />
 
-<h2>
-    AI Proctor Testing
-</h2>
+    <br /><br />
 
+    <button onclick="checkProctor()">Check Proctor</button>
 
+    <h3>Result</h3>
 
-<!-- Webcam -->
-
-<video
-
-    id="video"
-
-    width="500"
-
-    height="350"
-
-    autoplay
-
-    playsinline>
-
-</video>
-
-
-
-<br><br>
-
-
-
-<!-- Student Image -->
-
-
-<input
-
-    id="profileUrl"
-
-    type="text"
-
-    placeholder="Enter Cloudinary student image URL"
-
->
-
-
-<br><br>
-
-
-
-<button onclick="checkProctor()">
-
-    Check Proctor
-
-</button>
-
-
-
-<h3>
-    Result
-</h3>
-
-
-<pre id="result">
+    <pre id="result">
 
 Waiting...
 
-</pre>
+</pre
+    >
 
+    <script>
+      // -----------------------------
+      // Webcam Start
+      // -----------------------------
 
+      const video = document.getElementById("video");
 
+      navigator.mediaDevices
+        .getUserMedia({
+          video: true,
 
+          audio: false,
+        })
 
-<script>
+        .then(function (stream) {
+          video.srcObject = stream;
 
+          console.log("Camera Started");
+        })
 
-// -----------------------------
-// Webcam Start
-// -----------------------------
+        .catch(function (error) {
+          console.log("Camera Error", error);
 
+          document.getElementById("result").innerText = error.message;
+        });
 
-const video =
-    document.getElementById(
-        "video"
-    );
+      // -----------------------------
+      // Send frame to FastAPI
+      // -----------------------------
 
+      async function checkProctor() {
+        const output = document.getElementById("result");
 
+        try {
+          output.innerText = "Analyzing...";
 
-navigator
-.mediaDevices
-.getUserMedia(
+          // create canvas
 
-    {
+          const canvas = document.createElement("canvas");
 
-        video:true,
+          canvas.width = video.videoWidth;
 
-        audio:false
+          canvas.height = video.videoHeight;
 
-    }
+          const ctx = canvas.getContext("2d");
 
-)
+          // capture image
 
-.then(
-
-    function(stream){
-
-
-        video.srcObject =
-            stream;
-
-
-        console.log(
-            "Camera Started"
-        );
-
-    }
-
-)
-
-.catch(
-
-    function(error){
-
-
-        console.log(
-            "Camera Error",
-            error
-        );
-
-
-        document
-        .getElementById(
-            "result"
-        )
-        .innerText =
-            error.message;
-
-    }
-
-);
-
-
-
-
-
-
-
-// -----------------------------
-// Send frame to FastAPI
-// -----------------------------
-
-
-async function checkProctor(){
-
-
-    const output =
-        document.getElementById(
-            "result"
-        );
-
-
-    try{
-
-
-        output.innerText =
-            "Analyzing...";
-
-
-
-        // create canvas
-
-        const canvas =
-            document.createElement(
-                "canvas"
-            );
-
-
-
-        canvas.width =
-            video.videoWidth;
-
-
-
-        canvas.height =
-            video.videoHeight;
-
-
-
-        const ctx =
-            canvas.getContext(
-                "2d"
-            );
-
-
-
-        // capture image
-
-        ctx.drawImage(
-
+          ctx.drawImage(
             video,
 
             0,
@@ -271,230 +130,92 @@ async function checkProctor(){
 
             canvas.width,
 
-            canvas.height
+            canvas.height,
+          );
 
-        );
+          // canvas to image blob
 
+          const blob = await new Promise((resolve) =>
+            canvas.toBlob(
+              resolve,
 
+              "image/jpeg",
 
+              0.9,
+            ),
+          );
 
-
-        // canvas to image blob
-
-        const blob =
-            await new Promise(
-
-                resolve =>
-
-                    canvas.toBlob(
-
-                        resolve,
-
-                        "image/jpeg",
-
-                        0.9
-
-                    )
-
-            );
-
-
-
-        console.log(
-
+          console.log(
             "Frame size:",
 
-            blob.size
+            blob.size,
+          );
 
-        );
+          // prepare form data
 
+          const formData = new FormData();
 
-
-
-
-        // prepare form data
-
-
-        const formData =
-            new FormData();
-
-
-
-
-        formData.append(
-
+          formData.append(
             "frame",
 
             blob,
 
-            "frame.jpg"
+            "frame.jpg",
+          );
 
-        );
+          const profileUrl = document.getElementById("profileUrl").value;
 
-
-
-
-        const profileUrl =
-
-            document
-
-            .getElementById(
-
-                "profileUrl"
-
-            )
-
-            .value;
-
-
-
-
-        formData.append(
-
+          formData.append(
             "student_image_url",
 
-            profileUrl
+            profileUrl,
+          );
 
-        );
+          // API request
 
+          const response = await fetch(
+            "http://127.0.0.1:8000/proctor/analyze",
 
+            {
+              method: "POST",
 
+              body: formData,
+            },
+          );
 
-
-
-        // API request
-
-
-        const response =
-
-            await fetch(
-
-                "http://127.0.0.1:8000/proctor/analyze",
-
-                {
-
-                    method:"POST",
-
-                    body:formData
-
-                }
-
-            );
-
-
-
-
-
-        console.log(
-
+          console.log(
             "API Status:",
 
-            response.status
+            response.status,
+          );
 
-        );
+          if (response.ok === false) {
+            throw new Error("Backend Error : " + response.status);
+          }
 
+          const data = await response.json();
 
+          console.log(data);
 
+          // show result
 
+          output.innerText = JSON.stringify(
+            data,
 
-        if(
+            null,
 
-            response.ok === false
-
-        ){
-
-            throw new Error(
-
-                "Backend Error : "
-
-                +
-
-                response.status
-
-            );
-
-        }
-
-
-
-
-
-
-        const data =
-
-            await response.json();
-
-
-
-
-
-        console.log(
-
-            data
-
-        );
-
-
-
-
-
-
-        // show result
-
-
-        output.innerText =
-
-            JSON.stringify(
-
-                data,
-
-                null,
-
-                4
-
-            );
-
-
-
-    }
-
-
-    catch(error){
-
-
-
-        console.log(
-
+            4,
+          );
+        } catch (error) {
+          console.log(
             "ERROR",
 
-            error
+            error,
+          );
 
-        );
-
-
-
-        output.innerText =
-
-            "ERROR : "
-
-            +
-
-            error.message;
-
-
-    }
-
-
-
-}
-
-
-
-</script>
-
-
-
-</body>
-
-
+          output.innerText = "ERROR : " + error.message;
+        }
+      }
+    </script>
+  </body>
 </html>

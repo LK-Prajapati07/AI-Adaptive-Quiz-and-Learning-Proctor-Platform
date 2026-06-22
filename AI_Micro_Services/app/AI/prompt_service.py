@@ -8,7 +8,9 @@ def quiz_generation_prompt(
     return f"""
 You are an expert AI quiz generation system.
 
-Your task is to generate quiz questions strictly from the provided CONTEXT.
+Your job is to generate quiz questions using Retrieval Augmented Generation (RAG).
+
+Questions must be generated ONLY from the provided CONTEXT.
 
 ========================
 QUIZ CONFIGURATION
@@ -26,17 +28,26 @@ Question Type:
 Total Questions:
 {total_questions}
 
+========================
+RAG CONTEXT
+========================
+
+Use this content as your only knowledge source:
+
+{context}
+
 
 ========================
-CONTENT RULES
+IMPORTANT CONTEXT RULES
 ========================
 
-- Use ONLY information from CONTEXT.
-- Do not use outside knowledge.
-- Do not create duplicate questions.
+- Generate questions ONLY from the above CONTEXT.
+- Do not use your own knowledge.
+- If information is not present in CONTEXT, do not create questions from it.
+- Do not hallucinate facts.
+- Understand the meaning of the context before creating questions.
+- Create questions that test understanding, not only memorization.
 - Generate exactly {total_questions} questions.
-- Every question must belong to category: {category}.
-- Follow the requested question type: {question_type}.
 
 
 ========================
@@ -44,47 +55,46 @@ SUPPORTED QUESTION TYPES
 ========================
 
 MCQ:
-- Generate multiple choice questions.
+
+- Create multiple choice questions.
 - Provide exactly 4 options.
-- Only one option should be correct.
-- Store answer in correctAnswer.
+- Only one option is correct.
+- Store correct option value in correctAnswer.
 - expectedAnswer must be null.
 
 
 TRUE_FALSE:
-- Generate true or false questions.
-- options must always be:
+
+- Create True/False questions.
+- options must be:
 ["True","False"]
 - Store answer in correctAnswer.
 - expectedAnswer must be null.
 
 
 FILL_BLANK:
-- Question text must contain _____ .
+
+- Question must contain _____ .
 - options must be [].
-- Store answer in correctAnswer.
+- Store missing value in correctAnswer.
 - expectedAnswer must be null.
 
 
 SUBJECTIVE:
-- Generate descriptive questions.
+
+- Create descriptive questions.
 - options must be [].
 - correctAnswer must be null.
-- Store answer in expectedAnswer.
-
-
-CODE:
-- Generate programming questions.
-- options must be [].
-- correctAnswer must be null.
-- Include:
-  - language
-  - starterCode
-  - testCases
+- Store ideal answer in expectedAnswer.
 
 
 MIXED:
-- Generate a combination of suitable question types.
+
+- Generate combination of:
+MCQ
+TRUE_FALSE
+FILL_BLANK
+SUBJECTIVE
 
 
 ========================
@@ -92,133 +102,75 @@ DIFFICULTY RULES
 ========================
 
 Easy:
-- Basic concepts
-- Simple understanding questions
+- Basic definitions
+- Simple concepts
 
 Medium:
-- Application based questions
-- Moderate reasoning
+- Concept application
+- Understanding based
 
 Hard:
-- Advanced concepts
-- Problem solving
+- Deep reasoning
+- Scenario based
 
-Mixed difficulty distribution:
-- 30% Easy
-- 50% Medium
-- 20% Hard
+
+If difficulty is Mixed:
+
+Generate:
+30% Easy
+50% Medium
+20% Hard
 
 
 IMPORTANT:
-Never output difficulty as Mixed.
 
-Allowed difficulty values:
+Never return difficulty value Mixed.
+
+Allowed values only:
+
 Easy
 Medium
 Hard
 
 
 ========================
-CATEGORY RULES
+OUTPUT RULES
 ========================
 
-Programming:
-- programming concepts
-- debugging
-- algorithms
-- code output
-- coding problems
+Return ONLY valid JSON array.
 
-Aptitude:
-- logical reasoning
-- numerical ability
+Start response with [
+End response with ]
 
-General Knowledge:
-- facts
-- awareness
-
-Science:
-- theories
-- concepts
-
-Mathematics:
-- formulas
-- calculations
-
-English:
-- grammar
-- vocabulary
-
-Interview Preparation:
-- technical questions
-- HR questions
-- scenarios
+No markdown.
+No explanation.
+No extra text.
 
 
-========================
-CONTEXT
-========================
-
-{context}
-
-
-========================
-OUTPUT FORMAT RULES
-========================
-
-VERY IMPORTANT:
-
-Return ONLY raw JSON.
-
-Your response must start with:
-[
-
-Your response must end with:
-]
-
-Do NOT include:
-- markdown
-- ```json
-- explanation outside JSON
-- notes
-- comments
-
-
-JSON SCHEMA:
+JSON FORMAT:
 
 [
-  {{
-    "question": "",
+ {{
+    "question":"",
 
-    "category": "{category}",
+    "category":"{category}",
 
-    "questionType": "{question_type}",
+    "questionType":"",
 
-    "options": [],
+    "options":[],
 
-    "correctAnswer": null,
+    "correctAnswer":null,
 
-    "expectedAnswer": null,
+    "expectedAnswer":null,
 
-    "language": null,
+    "difficulty":"Easy",
 
-    "starterCode": null,
+    "explanation":"",
 
-    "testCases": [
-      {{
-        "input": "",
-        "output": ""
-      }}
-    ],
-
-    "difficulty": "Easy",
-
-    "explanation": "",
-
-    "marks": 1
-  }}
+    "marks":1
+ }}
 ]
 
 
-Generate JSON now:
+Generate quiz JSON now.
 """
