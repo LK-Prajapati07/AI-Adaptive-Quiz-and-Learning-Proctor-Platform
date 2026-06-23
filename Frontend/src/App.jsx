@@ -1,11 +1,12 @@
-import { useState } from 'react'
-
-import AppRouter from './router/AppRouter'
+import AppRouter from "./router/AppRouter";
+import { useGetCurrentUser } from "./customHook/auth.hook";
 
 function App() {
 
+  useGetCurrentUser();
 
-  return <AppRouter/>
+  return <AppRouter />;
+
 }
 
-export default App
+export default App;

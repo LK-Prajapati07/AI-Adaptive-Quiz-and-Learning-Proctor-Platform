@@ -10,7 +10,7 @@ const API = axios.create({
 export const LoginUser = async(data) => {
   try {
 
-    const res = await API.post(
+    const res = await API.post( //http://localhost:3000/api/auth/create-user
       "/api/auth/create-user",
       data
     );

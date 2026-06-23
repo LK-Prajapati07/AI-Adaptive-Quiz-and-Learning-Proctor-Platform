@@ -1,305 +1,121 @@
-import { Quiz } from "../model/quiz.model";
-import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
+import { Quiz } from "../model/quiz.model.js";
+
 export const createQuiz = async (req, res) => {
-    try {
-        const {
-            quizTitle,
-            description,
-            category,
-            duration,
-            difficulty_level,
-            question_type,
-            total_question,
-            passing_marks,
-        } = req.body;
-        const uploadPdf = await uploadToCloudinary.uploader.upload(req.file.path, {
-            resource_type: "raw",
-            folder: "quiz_pdf",
-        });
-        const pdf_url = uploadPdf.secure_url;
-        const aiResponse = await axios.post(
-            "http://localhost:8000/quiz/generate",
+  try {
+    const {
+      title,
+      description,
+      category,
+      difficulty,
+      totalQuestions,
+      questionType,
+      duration,
+      passingMarks,
+      totalMarks,
+      isRandomized,
+      isAdaptive,
+    } = req.body;
 
-            {
-                url: pdf_url,
+    const createdBy = req.user._id;
 
-                category,
+    if (!title || !category || !difficulty || !totalQuestions || !questionType) {
+      return res.status(400).json({
+        message: "Required fields missing",
 
-                difficulty_level,
-
-                totalQuestion: total_question,
-
-                question_type,
-            },
-        );
-        const quiz = await Quiz.create({
-            quizTitle,
-
-            description,
-
-            category,
-
-            duration,
-
-            difficulty_level,
-
-            question_type,
-
-            total_question,
-
-            total_marks,
-
-            passing_marks,
-
-            pdf_url,
-            questions: aiResponse.data.questions,
-            createdBy: req.user._id,
-        });
-        return res.status(200).json({
-            success: true,
-            message: "Quiz created successfully",
-            quiz,
-        });
-    } catch (error) {
-        return res.status(500).json({
-            message: error.message,
-            success: false,
-        });
+        success: false,
+      });
     }
-};
-export const getAllQuiz = async (req, res) => {
-
-
-    try {
-
-        const quizzes = await Quiz.find()
-            .select("-questions");
-
-
-
-        return res.status(200).json({
-
-            success: true,
-
-            quizzes
-
-        });
-
-
-
-    } catch (error) {
-
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-    }
-
+    const quiz = await Quiz.create({
+      title,
+      description,
+     category,
+      difficulty,
+      totalQuestions,
+      duration,
+      passingMarks,
+      totalMarks,
+      questionType,
+      isRandomized,
+      isAdaptive,
+      createdBy,
+      generationStatus: "PENDING",
+      generatedBy: "AI",
+      status: "Draft",
+    });
+    return res.status(201).json({
+      message: "Quiz created successfully",
+      success: true,
+      quiz,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: "Internal Server Error",
+      success: false,
+    });
+  }
 };
 
+export const getQuiz = async (req, res) => {
+  try {
+    const quizzes = await Quiz.find()
 
+      .populate("createdBy", "name email")
 
+      .sort({
+        createdAt: -1,
+      });
+
+    return res.status(200).json({
+      message: "Quizzes fetched successfully",
+
+      success: true,
+
+      quizzes,
+    });
+  } catch (error) {
+    console.log(error);
+
+    return res.status(500).json({
+      message: "Internal Server Error",
+
+      success: false,
+    });
+  }
+};
 
 // GET QUIZ BY ID
 
 export const getQuizById = async (req, res) => {
+  try {
+    const { id } = req.params;
 
+    const quiz = await Quiz.findById(id)
 
-    try {
+      .populate("createdBy", "name email");
 
+    if (!quiz) {
+      return res.status(404).json({
+        message: "Quiz not found",
 
-        const quiz = await Quiz.findById(
-            req.params.id
-        );
-
-
-        if (!quiz) {
-
-            return res.status(404).json({
-
-                success: false,
-
-                message: "Quiz not found"
-
-            });
-
-        }
-
-
-
-        return res.status(200).json({
-
-            success: true,
-
-            quiz
-
-        });
-
-
-
-    } catch (error) {
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
+        success: false,
+      });
     }
 
-};
+    return res.status(200).json({
+      message: "Quiz fetched successfully",
 
+      success: true,
 
+      quiz,
+    });
+  } catch (error) {
+    console.log(error);
 
+    return res.status(500).json({
+      message: "Internal Server Error",
 
-
-// GET QUESTIONS ONLY
-
-export const getQuizQuestions = async (req, res) => {
-
-
-    try {
-
-
-        const quiz = await Quiz.findById(
-            req.params.id
-        );
-
-
-
-        const questions = quiz.questions.map(q => ({
-
-            _id: q._id,
-
-            question: q.question,
-
-            options: q.options,
-
-            questionType: q.questionType,
-
-            marks: q.marks
-
-        }));
-
-
-
-
-        return res.status(200).json({
-
-            success: true,
-
-            questions
-
-        });
-
-
-
-    } catch (error) {
-
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-
-    }
-
-};
-
-
-
-
-
-// UPDATE QUIZ
-
-export const updateQuiz = async (req, res) => {
-
-    try {
-
-
-        const quiz = await Quiz.findByIdAndUpdate(
-
-            req.params.id,
-
-            req.body,
-
-            {
-                new: true
-            }
-
-        );
-
-
-
-        return res.status(200).json({
-
-            success: true,
-
-            message: "Quiz updated",
-
-            quiz
-
-        });
-
-
-    } catch (error) {
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
-    }
-
-};
-
-
-
-
-// DELETE QUIZ
-
-export const deleteQuiz = async (req, res) => {
-
-
-    try {
-
-
-        await Quiz.findByIdAndDelete(
-            req.params.id
-        );
-
-
-
-        return res.status(200).json({
-
-            success: true,
-
-            message: "Quiz deleted"
-
-        });
-
-
-
-    } catch (error) {
-
-
-        return res.status(500).json({
-            success: false,
-            message: error.message
-
-        });
-
-    }
-
+      success: false,
+    });
+  }
 };

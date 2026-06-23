@@ -1,163 +1,128 @@
 import mongoose from "mongoose";
 
 
-const questionSchema = new mongoose.Schema(
-{
-    question:{
-        type:String,
-        required:true
-    },
-
-    category:{
-        type:String,
-        required:true
-    },
-
-    questionType:{
-        type:String,
-        enum:[
-            "MCQ",
-            "TRUE_FALSE",
-            "FILL_BLANK",
-            "SUBJECTIVE"
-        ],
-        required:true
-    },
-
-    options:{
-        type:[String],
-        default:[]
-    },
-
-    correctAnswer:{
-        type:String,
-        default:null
-    },
-
-    expectedAnswer:{
-        type:String,
-        default:null
-    },
-
-    difficulty:{
-        type:String,
-        enum:[
-            "Easy",
-            "Medium",
-            "Hard"
-        ]
-    },
-
-    explanation:{
-        type:String
-    },
-
-    marks:{
-        type:Number,
-        default:1
-    }
-
-},
-{
-    _id:true
-}
-);
-
-
-
 const quizSchema = new mongoose.Schema(
-{
+  {
 
-    quizTitle:{
-        type:String,
-        required:true
+    title: {
+      type: String,
+      required: true,
+      trim: true
     },
 
 
-    description:{
-        type:String,
-        required:true
-    }, 
-
-
-    category:{
-        type:String,
-        required:true
+    description: {
+      type: String,
+      default: "",
+      trim: true
     },
-
-
-    duration:{
-        type:Number,
-        required:true
+    category: {
+      type: String,
+      enum: [
+        "Programming",
+        "Aptitude",
+        "General Knowledge",
+        "Science",
+        "Mathematics",
+        "English",
+        "Interview Preparation"
+      ],
+      required: true
     },
-
-
-    difficulty_level:{
-        type:String,
-        enum:[
-            "Easy",
-            "Medium",
-            "Hard",
-            "Mixed"
-        ],
-        required:true
+    difficulty: {
+      type: String,
+      enum: [
+        "Easy",
+        "Medium",
+        "Hard",
+        "Mixed"
+      ],
+      required: true
     },
-
-
-    question_type:{
-        type:String,
-        enum:[
-            "MCQ",
-            "TRUE_FALSE",
-            "FILL_BLANK",
-            "SUBJECTIVE"
-        ],
-        required:true
+   questionType: {
+      type: String, 
+      enum: [
+        "MCQ",
+        "TRUE_FALSE",
+        "FILL_BLANK",
+        "SUBJECTIVE",
+        
+      ],
+      required: true
     },
-
-
-    total_question:{
-        type:Number,
-        required:true
+    totalQuestions: {
+      type: Number,
+      required: true
     },
-
-
-    total_marks:{
-        type:Number,
-        required:true
+    // Cloudinary PDF URL
+    pdfUrl: {
+      type: String,
+      default: ""
     },
-
-
-    passing_marks:{
-        type:Number,
-        required:true
+    duration: {
+      type: Number, // minutes
+      default: 30
     },
-
-
-    pdf_url:{
-        type:String
+    passingMarks: {
+      type: Number,
+      default: 0
     },
-
-
-    questions:[
-        questionSchema
-    ],
-
-
-    createdBy:{
-        type:mongoose.Schema.Types.ObjectId,
-        ref:"User",
-        required:true
+    totalMarks: {
+      type: Number,
+      default: 0
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Auth",
+      required: true
+    },
+    // AI generation tracking
+    generationStatus: {
+      type: String,
+      enum: [
+        "PENDING",
+        "PROCESSING",
+        "COMPLETED",
+        "FAILED"
+      ],
+      default: "PENDING"
+    },
+    generatedBy: {
+      type: String,
+      enum: [
+        "AI",
+        "Manual"
+      ],
+      default: "AI"
+    },
+    status: {
+      type: String,
+      enum: [
+        "Draft",
+        "Published",
+        "Archived"
+      ],
+      default: "Draft"
+    },
+   isRandomized: {
+      type: Boolean,
+      default: true
+    },
+    isAdaptive: {
+      type: Boolean,
+      default: false
     }
+  },
 
-},
-{
+  {
     timestamps:true
-}
-);
+  }
+)
 
 
-export const Quiz = mongoose.model(
-    "Quiz",
-    quizSchema
-);
+
+export const Quiz =
+mongoose.model(
+  "Quiz",
+  quizSchema
+)

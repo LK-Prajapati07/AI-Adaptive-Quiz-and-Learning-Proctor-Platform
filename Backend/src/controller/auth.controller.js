@@ -4,7 +4,8 @@ import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 export const createUser = async (req, res) => {
   try {
     const { idToken,role} = req.body;
-    const allowedRoles = ["User", "Trainer", "Recruiter"];
+    console.log(idToken)
+    const allowedRoles = ["Student", "Trainer", "Recruiter"];
     console.log(idToken)
     if (!allowedRoles.includes(role)) {
       return res.status(403).json({

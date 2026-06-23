@@ -12,7 +12,6 @@ def code_evaluation(
 
     passed = 0
 
-
     # currently python support
     if language.lower() != "python":
 

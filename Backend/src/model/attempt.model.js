@@ -1,129 +1,86 @@
 import mongoose from "mongoose";
-
-
-
-const answerSchema = new mongoose.Schema(
-{
-
-    questionId:{
-        type:mongoose.Schema.Types.ObjectId,
-        required:true
-    },
-
-
-    student_answer:{
-        type:String,
-        default:null
-    },
-
-
-    isAnswered:{
-        type:Boolean,
-        default:false
-    }
-
-},
-{
-    _id:false
-}
-);
-
-
-
-
 const attemptSchema = new mongoose.Schema(
-{
-
-    userId:{
-
-        type:mongoose.Schema.Types.ObjectId,
-
-        ref:"User",
-
-        required:true
-
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Auth",
     },
 
-
-
-    quizId:{
-
-        type:mongoose.Schema.Types.ObjectId,
-
-        ref:"Quiz",
-
-        required:true
-
+    quiz: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Quiz",
     },
 
+    questions: [
+      {
+        question: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Question",
+        },
 
+        userAnswer: {
+          type: String,
+        },
 
-    answers:[
+        expectedAnswer: {
+          type: String,
+        },
+        
+        score: {
+          type: Number,
+        },
+        
 
-        answerSchema
+        maxScore: {
+          type: Number,
+        },
 
+        similarityScore: {
+          type: Number,
+        },
+
+        evaluationMethod: {
+          type: String,
+
+          enum: ["EMBEDDING", "LLM", "NODE"],
+        },
+
+        feedback: String,
+
+        difficulty: {
+          type: String,
+        },
+      },
     ],
 
+    totalScore: Number,
 
+    percentage: Number,
+    maxScore:Number,
 
-    startedAt:{
-
-        type:Date,
-
-        default:Date.now
-
+    startedAt: {
+      type: Date,
     },
 
-
-
-    submittedAt:{
-
-        type:Date
-
+    completedAt: {
+      type: Date,
     },
+    status: {
+      type: String,
 
+      enum: ["RUNNING", "COMPLETED", "EXPIRED"],
 
-
-    status:{
-
-        type:String,
-
-        enum:[
-
-            "IN_PROGRESS",
-
-            "SUBMITTED"
-
-        ],
-
-        default:"IN_PROGRESS"
-
+      default: "RUNNING",
     },
+    studentImageUrl: {
+      type: String,
+      required: true,
+    },
+    
+  },
+  {
 
-
-
-    timeTaken:{
-
-        type:Number
-
-    }
-
-},
-
-{
-
-    timestamps:true
-
-}
-
+    timestamps: true,
+  },
 );
-
-
-
-export const Attempt = mongoose.model(
-
-    "Attempt",
-
-    attemptSchema
-
-);
+export const Attempt = mongoose.model("Attempt", attemptSchema);

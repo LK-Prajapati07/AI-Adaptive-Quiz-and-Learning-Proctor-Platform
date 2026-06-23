@@ -18,6 +18,7 @@ export const useLoginHook=()=>{
     })
 }
 export const useGetCurrentUser=()=>{
+    const dispatch=useDispatch()
     return useQuery({
         queryKey:['Get Current Fetch'],
         queryFn:async()=>{

@@ -117,9 +117,9 @@ Hard:
 If difficulty is Mixed:
 
 Generate:
-30% Easy
-50% Medium
-20% Hard
+34% Easy
+33% Medium
+33% Hard
 
 
 IMPORTANT:

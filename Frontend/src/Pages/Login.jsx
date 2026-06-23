@@ -27,59 +27,79 @@ const Login = () => {
   const { mutateAsync } = useLoginHook();
 
   const loginHandler = async (data) => {
-    try {
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        data.email,
-        data.password,
-        data.role,
-      );
+    console.log
+    // try {
+    //   const userCredential = await signInWithEmailAndPassword(
+    //     auth,
+    //     data.email,
+    //     data.password,
+    //     data.role,
+    //   );
 
-      const user = userCredential.user;
+    //   const user = userCredential.user;
 
-      if (!user.emailVerified) {
-        await signOut(auth);
+    //   if (!user.emailVerified) {
+    //     await signOut(auth);
 
-        toast.warning("Please verify your email before login");
+    //     toast.warning("Please verify your email before login");
 
-        return;
-      }
+    //     return;
+    //   }
 
-      const idToken = await user.getIdToken();
-      console.log(idToken)
+    //   const idToken = await user.getIdToken();
+    //   console.log(idToken)
 
-      mutateAsync({
-        idToken,
-        role: data.role,
-      });
-      toast.success("Login Successful 🎉");
+    //   mutateAsync({
+    //     idToken,
+    //     role: data.role,
+    //   });
+    //   toast.success("Login Successful 🎉");
 
-      navigate("/");
-    } catch (error) {
-      toast.error(error?.message || "Something went wrong");
-    }
+    //   navigate("/dashboard");
+    // } catch (error) {
+    //   toast.error(error?.message || "Something went wrong");
+    // }
   };
 
-  // Google Login
-  const handleGoogleSignIn = async () => {
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
 
-      const idToken = await result.user.getIdToken();
+const handleGoogleSignIn = async () => {
+  try {
 
-      mutateAsync({
-        idToken,
-      });
+    const role = watch("role");
 
-      toast.success("Google Login Successful 🎉");
+    console.log("ROLE:", role);
 
-      navigate("/");
-    } catch (error) {
-      toast.error(error?.message || "Something went wrong");
-    }
-  };
+    const result = await signInWithPopup(
+      auth,
+      googleProvider
+    );
 
-  // Forgot password
+    const idToken =
+      await result.user.getIdToken();
+
+
+     mutateAsync({
+      idToken,
+      role,
+    });
+
+
+    toast.success(
+      "Google Login Successful 🎉"
+    );
+
+    navigate("/dashboard");
+
+  } catch(error){
+
+    toast.error(
+      error?.response?.data?.message ||
+      error.message
+    );
+
+  }
+};
+
   const forgetPassword = async () => {
     try {
       const email = watch("email");

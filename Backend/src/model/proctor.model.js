@@ -1,64 +1,69 @@
-import mongoose  from "mongoose";
-const eventSchema=new mongoose.Schema({
-    type:{
-        type:String,
-        enum:[ "NO_FACE",
-                "MULTIPLE_FACE",
-                "PHONE_DETECTED",
-                "DIFFERENT_PERSON",
-                "DEEPFAKE",
-                "NOT_LIVE"]
-    },
-    risk:{
-        type:Number,
-        default:0
-    },
-    message:{
-        type:String
-    },
-    createdAt:{
-        type:Date,
-        default:Date.now
-    }
-},
+import mongoose from "mongoose";
 
-{
-    _id:false
-}
-)
-const proctorSchema=new mongoose.Schema({
-    userId:{
-        type:mongoose.Schema.Types.ObjectId,
-        ref:"Auth",
-        required:true
+const proctorSchema = new mongoose.Schema(
+  {
+    attempt: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Attempt",
+      required: true,
+      unique: true,
+      index: true,
     },
-    quizId:{
-        type:mongoose.Schema.Types.ObjectId,
-        ref:"Quiz",
-        required:true
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Auth",
+      required: true,
     },
-    attemptId:{
-        type:mongoose.Schema.Types.ObjectId,
-        ref:"Attempt",
-        required:true
+    quiz: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Quiz",
+      required: true,
     },
-    events:{
-        eventSchema
+    riskScore: {
+      type: Number,
+      default: 0,
     },
-    totalRisk:{
-        type:Number,
-        default:0
+    status: {
+      type: String,
+      enum: ["NORMAL", "WARNING", "CHEATING", "DISQUALIFIED"],
+      default: "NORMAL",
     },
-    status:{
-        type:String,
-        enum:["NORMAL",
-                "WARNING",
-                "CHEATING"],
-                default:"NORMAL"
-    }
-},
-{
-    timestamps:true
-}
-)
-export const Proctor=mongoose.model('Proctor',proctorSchema)
+    warnings: [
+      {
+        reason: {
+          type: String,
+        },
+
+        riskScore: {
+          type: Number,
+        },
+        snapshotUrl: {
+          type: String,
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+    detectedObjects: [
+      {
+        object: {
+          type: String,
+        },
+        confidence: {
+          type: Number,
+        },
+      },
+    ],
+    faceCount: {
+      type: Number,
+      default: 1,
+    },
+  },
+  {
+    timestamps: true,
+  },
+);
+
+export const Proctor = mongoose.model("Proctor", proctorSchema);

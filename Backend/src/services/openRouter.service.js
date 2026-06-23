@@ -1,5 +1,5 @@
-import { OpenRouter } from "@openrouter/sdk";
-import axios from "axios"; 
+import axios from "axios";
+
 export const askAI = async (messages) => {
   try {
     if (!Array.isArray(messages) || messages.length === 0) {
@@ -15,11 +15,11 @@ export const askAI = async (messages) => {
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env.VITE_OPENROUTER_API_KEY}`,
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
           "Content-Type": "application/json",
-          "HTTP-Referer": "http://localhost:5173", // your frontend
-          "X-Title": "AI Quiz App"
-        }
+          "HTTP-Referer": "http://localhost:5173",
+          "X-Title": "AI Quiz App",
+        },
       }
     );
 
@@ -32,9 +32,7 @@ export const askAI = async (messages) => {
     return content.trim();
 
   } catch (error) {
-    console.error("OpenRouter Error:",
-      error.response?.data || error.message
-    );
+    console.error("OpenRouter Error:", error.response?.data || error.message);
     throw error;
   }
 };

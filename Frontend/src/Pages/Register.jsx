@@ -2,142 +2,204 @@ import React from "react";
 import { FcGoogle } from "react-icons/fc";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+
+import {
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+  signInWithPopup,
+  signOut,
+  updateProfile,
+} from "firebase/auth";
+
+// import {
+//   auth,
+//   googleProvider,
+// } from "@/firebase/firebase.config";
+
+import { useLoginHook } from "@/customHook/auth.hook";
+import { auth, googleProvider } from "@/firebase";
 
 const Register = () => {
   const navigate = useNavigate();
 
-  const { register, handleSubmit } = useForm();
+  const { mutateAsync } = useLoginHook();
 
-  const registerHandler = (data) => {
+  const { register, handleSubmit, watch } = useForm({
+    defaultValues: {
+      role: "Student",
+    },
+  });
 
+  // ===============================
+  // GOOGLE REGISTER
+  // ===============================
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const role = watch("role");
+
+      const result = await signInWithPopup(auth, googleProvider);
+
+      const idToken = await result.user.getIdToken();
+
+      await mutateAsync({
+        idToken,
+        role,
+      });
+
+      toast.success("Google Register Successful 🎉");
+
+      navigate("/dashboard");
+    } catch (error) {
+      toast.error(error?.response?.data?.message || error.message);
+    }
   };
 
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 via-white to-purple-50 px-4">
 
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
+  const registerHandler = async (data) => {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        data.email,
+        data.password,
+      );
+
+      await updateProfile(userCredential.user, {
+        displayName: data.name,
+      });
+
+      await sendEmailVerification(userCredential.user);
+
+      await signOut(auth);
+
+      toast.success("Verification email sent 📩");
+
+      navigate("/login");
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
+  return (
+    <div
+      className="
+      min-h-screen flex items-center justify-center
+      bg-linear-to-br
+      from-blue-50 via-white to-purple-50
+      px-4
+    "
+    >
+      <div
+        className="
+        w-full max-w-md
+        bg-white rounded-2xl
+        shadow-xl p-8
+      "
+      >
+        {/* Header */}
 
         <div className="text-center mb-8">
-
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1
+            className="
+            text-3xl font-bold text-gray-900
+          "
+          >
             Create Account
           </h1>
 
           <p className="text-gray-500 mt-2">
             Start your learning journey today
           </p>
-
         </div>
 
+        {/* FORM */}
 
-        <form
-          onSubmit={handleSubmit(registerHandler)}
-          className="space-y-5"
-        >
+        <form onSubmit={handleSubmit(registerHandler)} className="space-y-5">
+          {/* NAME */}
 
-          {/* Name */}
           <div>
-            <label className="text-sm font-medium text-gray-700">
-              Full Name
-            </label>
+            <label className="text-sm font-medium">Full Name</label>
 
             <input
               type="text"
               placeholder="Enter your name"
-              {...register("name")}
+              {...register("name", { required: true })}
               className="
                 mt-2 w-full px-4 py-3
                 border rounded-xl
-                focus:ring-2 focus:ring-blue-500
+                focus:ring-2
+                focus:ring-blue-500
                 outline-none
               "
             />
           </div>
 
+          {/* EMAIL */}
 
-          {/* Email */}
           <div>
-            <label className="text-sm font-medium text-gray-700">
-              Email
-            </label>
+            <label className="text-sm font-medium">Email</label>
 
             <input
               type="email"
               placeholder="Enter email"
-              {...register("email")}
+              {...register("email", { required: true })}
               className="
                 mt-2 w-full px-4 py-3
                 border rounded-xl
-                focus:ring-2 focus:ring-blue-500
+                focus:ring-2
+                focus:ring-blue-500
                 outline-none
               "
             />
           </div>
 
+          {/* PASSWORD */}
 
-          {/* Password */}
           <div>
-            <label className="text-sm font-medium text-gray-700">
-              Password
-            </label>
+            <label className="text-sm font-medium">Password</label>
 
             <input
               type="password"
               placeholder="Create password"
-              {...register("password")}
+              {...register("password", { required: true })}
               className="
                 mt-2 w-full px-4 py-3
                 border rounded-xl
-                focus:ring-2 focus:ring-blue-500
+                focus:ring-2
+                focus:ring-blue-500
                 outline-none
               "
             />
           </div>
 
+          {/* ROLE */}
 
-          {/* Role */}
           <div>
-
-            <label className="text-sm font-medium text-gray-700">
-              Role
-            </label>
-
+            <label className="text-sm font-medium">Role</label>
 
             <select
               {...register("role")}
               className="
-                mt-2 w-full px-4 py-3
+                mt-2 w-full
+                px-4 py-3
                 border rounded-xl
                 outline-none
               "
             >
+              <option value="Student">Student</option>
 
-              <option value="Student">
-                Student
-              </option>
-              <option value="Recruiter">
-                Recruiter
-              </option>
+              <option value="Recruiter">Recruiter</option>
 
-              <option value="Trainer">
-                Trainer
-
-              </option>
-
+              <option value="Trainer">Trainer</option>
             </select>
-
           </div>
 
+          {/* PROFILE PHOTO UI ONLY */}
 
-
-          {/* Profile */}
           <div>
-
-            <label className="text-sm font-medium text-gray-700">
-              Profile Photo
-            </label>
-
+            <label className="text-sm font-medium">Profile Photo</label>
 
             <input
               type="file"
@@ -149,69 +211,84 @@ const Register = () => {
                 px-4 py-3
               "
             />
-
           </div>
 
-
-
+          {/* SUBMIT */}
 
           <button
             type="submit"
             className="
-              w-full py-3 rounded-xl
-              bg-blue-600 text-white
+              w-full py-3
+              rounded-xl
+              bg-blue-600
+              text-white
               font-semibold
               hover:bg-blue-700
               transition
             "
           >
-
             Register
-
           </button>
-
-
         </form>
 
+        {/* Divider */}
 
+        <div
+          className="
+          flex items-center my-6
+        "
+        >
+          <div
+            className="
+            flex-1 h-px bg-gray-300
+          "
+          />
 
-        <div className="flex items-center my-6">
-
-          <div className="flex-1 h-px bg-gray-300" />
-
-          <span className="px-3 text-gray-400 text-sm">
+          <span
+            className="
+            px-3 text-gray-400 text-sm
+          "
+          >
             OR
           </span>
 
-          <div className="flex-1 h-px bg-gray-300" />
-
+          <div
+            className="
+            flex-1 h-px bg-gray-300
+          "
+          />
         </div>
 
-
+        {/* GOOGLE */}
 
         <button
+          type="button"
+          onClick={handleGoogleSignIn}
           className="
             w-full py-3
             border rounded-xl
-            flex justify-center gap-3
+            flex justify-center
+            items-center
+            gap-3
             hover:bg-gray-50
             transition
           "
         >
-
           <FcGoogle className="text-2xl" />
-
           Continue with Google
-
         </button>
 
+        {/* LOGIN LINK */}
 
-
-
-        <p className="text-center text-sm text-gray-500 mt-6">
-
+        <p
+          className="
+          text-center
+          text-sm
+          text-gray-500
+          mt-6
+        "
+        >
           Already have an account?
-
           <span
             onClick={() => navigate("/login")}
             className="
@@ -221,16 +298,10 @@ const Register = () => {
               font-medium
             "
           >
-
             Login
-
           </span>
-
         </p>
-
-
       </div>
-
     </div>
   );
 };
