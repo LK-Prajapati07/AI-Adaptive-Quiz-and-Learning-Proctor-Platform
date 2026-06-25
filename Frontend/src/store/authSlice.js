@@ -19,16 +19,10 @@ export const authSlice = createSlice({
 
             state.user = user;
             state.isAuthenticated = true;
-
-            // FIX
             state.role = user.role;
-
             state.isLoading = false;
         },
-
-
         logoutUser: (state) => {
-
             state.user = null;
             state.role = null;
             state.isAuthenticated = false;

@@ -4,7 +4,7 @@ import { verifyAuth } from '../middleware/auth.middleware.js'
 import { authorizeRole } from '../middleware/role.user.middleware.js'
 import { upload } from '../middleware/upload.middleware.js'
 const questionRouter=express.Router()
-questionRouter.post("/:quizId",verifyAuth,authorizeRole("Trainer"),generateQuestion)
-questionRouter.get("/:quizId",verifyAuth,authorizeRole("Trainer"),getQuestionsByQuizId)
-questionRouter.get("/",geAllQuestions)
+questionRouter.post("/:quizId",verifyAuth,authorizeRole("Trainer","Admin","Recruiter"),generateQuestion)
+questionRouter.get("/:quizId",verifyAuth,authorizeRole("Trainer","Admin","Recruiter"),getQuestionsByQuizId)
+questionRouter.get("/",verifyAuth,authorizeRole("Trainer","Admin"),geAllQuestions)
 export default questionRouter

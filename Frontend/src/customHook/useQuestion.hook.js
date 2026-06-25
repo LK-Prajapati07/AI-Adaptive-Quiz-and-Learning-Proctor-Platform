@@ -1,31 +1,55 @@
-import { geAllQuestions, generateQuestion, getQuestionsByQuizId } from "@/API/question.api";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import {
+  geAllQuestions,
+  generateQuestion,
+  getQuestionsByQuizId,
+} from "@/API/question.api";
+
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
 import { toast } from "sonner";
 
-import { useQueryClient } from "@tanstack/react-query";
+// GENERATE QUESTION
 
-export const useQuestion = () => {
+export const useGenerateQuestion = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ quizId, data }) => generateQuestion(quizId, data),
-    onSuccess: (_, variables) => {
+
+    onSuccess: (response, variables) => {
+      toast.success(response?.message || "Questions Generated");
+
       queryClient.invalidateQueries({
-        queryKey: ["Quiz Fetched", variables.quizId],
+        queryKey: ["questions", variables.quizId],
       });
+    },
+
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.message || "Question generation failed",
+      );
     },
   });
 };
-export const usegetQuestionsByQuizId = (quizId) => {
+
+// GET QUESTIONS BY QUIZ ID
+
+export const useGetQuestionsByQuizId = (quizId) => {
   return useQuery({
+    queryKey: ["questions", quizId],
+
     queryFn: () => getQuestionsByQuizId(quizId),
-    queryKey: ["Quiz Fetched", quizId],
+
     enabled: !!quizId,
   });
 };
 
-export const useGetAllQuestion=()=>{
-    return useQuery({
-        queryFn:geAllQuestions
-    })
-}
+// GET ALL QUESTIONS
+
+export const useGetAllQuestion = () => {
+  return useQuery({
+    queryKey: ["questions"],
+
+    queryFn: geAllQuestions,
+  });
+};

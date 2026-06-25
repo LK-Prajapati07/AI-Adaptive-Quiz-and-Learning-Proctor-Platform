@@ -6,99 +6,70 @@ import {
   signOut,
   sendPasswordResetEmail,
 } from "firebase/auth";
+
 import { FcGoogle } from "react-icons/fc";
 
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+
 import { toast } from "sonner";
 
 import { auth, googleProvider } from "@/firebase";
+
 import { useLoginHook } from "@/customHook/auth.hook";
 
 const Login = () => {
-  const navigate = useNavigate();
-
   const { register, handleSubmit, watch } = useForm({
     defaultValues: {
       role: "Student",
     },
   });
 
-  const { mutateAsync } = useLoginHook();
+  const { mutate, isPending } = useLoginHook();
+
+  // EMAIL LOGIN
 
   const loginHandler = async (data) => {
-    console.log
-    // try {
-    //   const userCredential = await signInWithEmailAndPassword(
-    //     auth,
-    //     data.email,
-    //     data.password,
-    //     data.role,
-    //   );
+    try {
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        data.email,
+        data.password,
+      );
+      const firebaseUser = userCredential.user;
+      if (!firebaseUser.emailVerified) {
+        await signOut(auth);
+        toast.warning("Please verify your email");
+        return;
+      }
+      const idToken = await firebaseUser.getIdToken();
+      await mutate({
+        idToken,
 
-    //   const user = userCredential.user;
+        role: data.role,
+      });
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+  const handleGoogleSignIn = async () => {
+    try {
+      const role = watch("role");
 
-    //   if (!user.emailVerified) {
-    //     await signOut(auth);
+      const result = await signInWithPopup(auth, googleProvider);
 
-    //     toast.warning("Please verify your email before login");
+      const idToken = await result.user.getIdToken();
 
-    //     return;
-    //   }
+      await mutate({
+        idToken,
 
-    //   const idToken = await user.getIdToken();
-    //   console.log(idToken)
-
-    //   mutateAsync({
-    //     idToken,
-    //     role: data.role,
-    //   });
-    //   toast.success("Login Successful 🎉");
-
-    //   navigate("/dashboard");
-    // } catch (error) {
-    //   toast.error(error?.message || "Something went wrong");
-    // }
+        role,
+      });
+    } catch (error) {
+      toast.error(error?.response?.data?.message || error.message);
+    }
   };
 
-
-const handleGoogleSignIn = async () => {
-  try {
-
-    const role = watch("role");
-
-    console.log("ROLE:", role);
-
-    const result = await signInWithPopup(
-      auth,
-      googleProvider
-    );
-
-    const idToken =
-      await result.user.getIdToken();
-
-
-     mutateAsync({
-      idToken,
-      role,
-    });
-
-
-    toast.success(
-      "Google Login Successful 🎉"
-    );
-
-    navigate("/dashboard");
-
-  } catch(error){
-
-    toast.error(
-      error?.response?.data?.message ||
-      error.message
-    );
-
-  }
-};
+  // FORGOT PASSWORD
 
   const forgetPassword = async () => {
     try {
@@ -111,82 +82,111 @@ const handleGoogleSignIn = async () => {
       }
 
       await sendPasswordResetEmail(auth, email);
-
-      toast.success("Reset link sent to email");
+      toast.success("Reset link sent");
     } catch (error) {
-      toast.error(error?.message || "Something went wrong");
+      toast.error(error.message);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 via-white to-purple-50 px-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Welcome Back</h1>
+    <div
+      className="
+min-h-screen
+flex
+items-center
+justify-center
+bg-linear-to-br
+from-blue-50
+via-white
+to-purple-50
+px-4
+"
+    >
+      <div
+        className="
+w-full
+max-w-md
+bg-white
+rounded-2xl
+shadow-xl
+p-8
+"
+      >
+        <h1
+          className="
+text-3xl
+font-bold
+text-center
+"
+        >
+          Welcome Back
+        </h1>
 
-          <p className="text-gray-500 mt-2">
-            Login to continue your learning journey
-          </p>
-        </div>
+        <form onSubmit={handleSubmit(loginHandler)} className="space-y-5 mt-8">
+          <input
+            type="email"
+            placeholder="Email"
+            {...register("email")}
+            className="
+w-full
+border
+px-4
+py-3
+rounded-xl
+"
+          />
 
-        <form onSubmit={handleSubmit(loginHandler)} className="space-y-5">
-          <div>
-            <label>Email</label>
-
-            <input
-              type="email"
-              placeholder="Enter email"
-              {...register("email")}
-              className="mt-2 w-full px-4 py-3 border rounded-xl"
-            />
-          </div>
-
-          <div>
-            <label>Password</label>
-
-            <input
-              type="password"
-              placeholder="Enter password"
-              {...register("password")}
-              className="mt-2 w-full px-4 py-3 border rounded-xl"
-            />
-          </div>
+          <input
+            type="password"
+            placeholder="Password"
+            {...register("password")}
+            className="
+w-full
+border
+px-4
+py-3
+rounded-xl
+"
+          />
 
           <button
             type="button"
             onClick={forgetPassword}
-            className="text-blue-600"
+            className="
+text-blue-600
+"
           >
             Forgot Password?
           </button>
-          <div>
-            <label>Login as</label>
 
-            <select
-              {...register("role")}
-              className="
-      mt-2 
-      w-full 
-      px-4 
-      py-3 
-      border 
-      rounded-xl
-      bg-white
-    "
-            >
-              <option value="Student">Student</option>
+          <select
+            {...register("role")}
+            className="
+w-full
+border
+px-4
+py-3
+rounded-xl
+"
+          >
+            <option value="Student">Student</option>
 
-              <option value="Trainer">Trainer</option>
+            <option value="Trainer">Trainer</option>
 
-              <option value="Recruiter">Recruiter</option>
-            </select>
-          </div>
+            <option value="Recruiter">Recruiter</option>
+          </select>
 
           <button
-            type="submit"
-            className="w-full py-3 bg-blue-600 text-white rounded-xl"
+            disabled={isPending}
+            className="
+w-full
+bg-blue-600
+text-white
+py-3
+rounded-xl
+"
           >
-            Login
+            {isPending ? "Loading..." : "Login"}
           </button>
         </form>
 
@@ -194,21 +194,20 @@ const handleGoogleSignIn = async () => {
 
         <button
           onClick={handleGoogleSignIn}
-          className="w-full py-3 border rounded-xl"
+          className="
+w-full
+border
+py-3
+rounded-xl
+flex
+items-center
+justify-center
+gap-3
+"
         >
           <FcGoogle className="text-2xl" />
-          Continue with Google
+          Continue With Google
         </button>
-
-        <p className="text-center mt-6">
-          Don't have an account?
-          <span
-            onClick={() => navigate("/register")}
-            className="text-blue-600 cursor-pointer ml-2"
-          >
-            Register
-          </span>
-        </p>
       </div>
     </div>
   );
