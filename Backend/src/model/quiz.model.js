@@ -57,7 +57,8 @@ const quizSchema = new mongoose.Schema(
     // Cloudinary PDF URL
     pdfUrl: {
       type: String,
-      default: ""
+      default: "",
+      required:true
     },
     duration: {
       type: Number, // minutes

@@ -1,35 +1,28 @@
 import cloudinary from "../config/cloudinary.js";
 import { Readable } from "stream";
 
+export const uploadToCloudinary = (file, folder = "uploads") => {
+  return new Promise((resolve, reject) => {
+    const isPdf = file.mimetype === "application/pdf";
 
-export const uploadToCloudinary = (buffer, folder = "uploads") => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder,
 
-    return new Promise((resolve, reject) => {
+        resource_type: isPdf ? "raw" : "image",
+      },
 
+      (error, result) => {
+        if (error) {
+          return reject(error);
+        }
 
-        const uploadStream = cloudinary.uploader.upload_stream(
-            {
-                folder
-            },
+        resolve(result);
+      },
+    );
 
-            (error, result) => {
+    const stream = Readable.from(file.buffer);
 
-                if (error) {
-                    return reject(error);
-                }
-
-
-                resolve(result);
-
-            }
-        );
-
-
-        const stream = Readable.from(buffer);
-
-
-        stream.pipe(uploadStream);
-
-    });
-
+    stream.pipe(uploadStream);
+  });
 };

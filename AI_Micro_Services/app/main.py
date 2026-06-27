@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.router.evaluation_routes import router as subjective_router
 from app.router.quiz_routes import router as quiz_router
 from app.router.proctor_router import router as proctor_router
-from app.router.evaluation_router import router as evaluate_router
+
 
 
 app = FastAPI(
@@ -48,9 +48,7 @@ app.include_router(
     proctor_router
 )
 
-app.include_router(
-    evaluate_router
-)
+
 app.include_router(
     subjective_router
 )

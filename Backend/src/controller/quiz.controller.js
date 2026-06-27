@@ -1,4 +1,5 @@
 import { Quiz } from "../model/quiz.model.js";
+import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 
 export const createQuiz = async (req, res) => {
   try {
@@ -18,17 +19,33 @@ export const createQuiz = async (req, res) => {
 
     const createdBy = req.user._id;
 
-    if (!title || !category || !difficulty || !totalQuestions || !questionType) {
+    if (
+      !title ||
+      !category ||
+      !difficulty ||
+      !totalQuestions ||
+      !questionType
+    ) {
       return res.status(400).json({
         message: "Required fields missing",
 
         success: false,
       });
     }
+    if (!req.file) {
+      return res.status(400).json({
+        message: "PDF file required",
+        success: false,
+      });
+    }
+    let pdfUrl = "";
+    const result = await uploadToCloudinary(req.file,"quiz-pdfs");
+    pdfUrl = result.secure_url;
     const quiz = await Quiz.create({
+      pdfUrl,
       title,
       description,
-     category,
+      category,
       difficulty,
       totalQuestions,
       duration,

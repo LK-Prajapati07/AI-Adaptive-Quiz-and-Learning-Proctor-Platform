@@ -114,3 +114,14 @@ export const getCurrentUser = async (req, res) => {
     return res.status(500).json({ message: error.message, success: false });
   }
 };
+
+export const showAllUser=async(req,res)=>{
+  try {
+    
+  } catch (error) {
+    return res.status(500).json({
+      message:error.message,
+      success:false
+    })
+  }
+}

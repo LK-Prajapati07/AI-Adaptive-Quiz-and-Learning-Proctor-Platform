@@ -1,8 +1,9 @@
 import {
   startAttempt,
   submitQuiz,
-  result,
+
   getUserAttempts,
+  getAttemptResult,
 } from "@/API/attempt.api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -26,7 +27,11 @@ export const useSubmitQuiz = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ attemptId, data }) => submitQuiz(attemptId, data),
+    mutationFn: ({ attemptId, questionId, answer }) =>
+      submitQuiz(attemptId, {
+        questionId,
+        answer,
+      }),
 
     onSuccess: (response) => {
       queryClient.invalidateQueries({
@@ -37,7 +42,9 @@ export const useSubmitQuiz = () => {
     },
 
     onError: (error) => {
-      toast.error(error?.response?.data?.message || "Submit failed");
+      toast.error(
+        error?.response?.data?.message || "Submit failed"
+      );
     },
   });
 };
@@ -45,7 +52,7 @@ export const useResult = (attemptId) => {
   return useQuery({
     queryKey: ["result", attemptId],
 
-    queryFn: () => result(attemptId),
+    queryFn: () => getAttemptResult(attemptId),
 
     enabled: !!attemptId,
   });

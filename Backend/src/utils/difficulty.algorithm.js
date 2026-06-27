@@ -1,17 +1,29 @@
 export const updateDifficulty = (session, evaluation) => {
-  const percentage = (evaluation.score / evaluation.maxScore) * 100;
+  const percentage =
+    (evaluation.score / evaluation.maxScore) * 100;
 
-  if (percentage >= 80) {
-    if (session.currentDifficulty === "easy") {
-      session.currentDifficulty = "medium";
-    } else if (session.currentDifficulty === "medium") {
-      session.currentDifficulty = "hard";
-    }
-  } else if (percentage < 50) {
-    if (session.currentDifficulty === "hard") {
-      session.currentDifficulty = "medium";
-    } else if (session.currentDifficulty === "medium") {
-      session.currentDifficulty = "easy";
-    }
+  switch (session.currentDifficulty) {
+    case "Easy":
+      if (percentage >= 80) {
+        session.currentDifficulty = "Medium";
+      }
+      break;
+
+    case "Medium":
+      if (percentage >= 80) {
+        session.currentDifficulty = "Hard";
+      } else if (percentage < 50) {
+        session.currentDifficulty = "Easy";
+      }
+      break;
+
+    case "Hard":
+      if (percentage < 50) {
+        session.currentDifficulty = "Medium";
+      }
+      break;
+
+    default:
+      session.currentDifficulty = "Medium";
   }
 };

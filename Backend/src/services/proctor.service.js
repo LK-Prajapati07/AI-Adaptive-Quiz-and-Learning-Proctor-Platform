@@ -11,94 +11,45 @@ export const analyzeProctor = async ({ userId, attemptId, frameBuffer }) => {
     if (!attempt) {
       throw new Error("Attempt not found");
     }
-
-    // ========================
-    // SEND IMAGE TO FASTAPI
-    // ========================
-
     const formData = new FormData();
-
     formData.append("frame", frameBuffer, {
       filename: "frame.jpg",
       contentType: "image/jpeg",
     });
-
     formData.append("student_image_url", attempt.studentImageUrl);
-
     const response = await axios.post(
       "http://127.0.0.1:8000/proctor/analyze",
-
       formData,
-
       {
         headers: {
           ...formData.getHeaders(),
         },
       },
     );
-
     const result = response.data;
-
-    /*
-    
-    FastAPI response example:
-
-    {
-      status:"WARNING",
-      total_risk:80,
-      reason:"PHONE_DETECTED",
-      faceCount:1,
-      detectedObjects:["phone"]
-    }
-
-    */
-
-    // ========================
-    // FIND PROCTOR SESSION
-    // ========================
-
     const proctor = await Proctor.findOne({
       attempt: attemptId,
     });
-
     if (!proctor) {
       throw new Error("Proctor session not found");
     }
-
-    // ========================
-    // UPDATE DATA
-    // ========================
-
     proctor.riskScore = result.total_risk;
-
     proctor.faceCount = result.faceCount || 1;
-
     proctor.detectedObjects = result.detectedObjects || [];
-
     // only save warnings
-
     if (result.status !== "NORMAL") {
       proctor.warnings.push({
         reason: result.reason || result.status,
-
         riskScore: result.total_risk,
       });
     }
-
-    // ========================
-    // 3 WARNING RULE
-    // ========================
-
     if (proctor.warnings.length >= 3) {
       proctor.status = "CHEATING";
-
       attempt.status = "DISQUALIFIED";
-
       await attempt.save();
     } else {
       proctor.status = result.status;
     }
-
     await proctor.save();
 
     return {

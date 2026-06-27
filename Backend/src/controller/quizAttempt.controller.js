@@ -7,69 +7,133 @@ import { Attempt } from "../model/attempt.model.js";
 import mongoose from "mongoose";
 import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 import { Proctor } from "../model/proctor.model.js";
-
-
+const QUESTION_PER_DIFFICULTY = 10;
+const REDIS_EXPIRE_TIME = 60 * 60;
 
 export const startQuizAttempt = async (req, res) => {
   try {
     const userId = req.user.id;
     const { quizId } = req.params;
-    const Easy = await Question.aggregate([
-      {
-        $match: {
-          quizId: new mongoose.Types.ObjectId(quizId),
-          difficulty: "Easy",
-        },
-      },
-
-      {
-        $sample: {
-          size: 10,
-        },
-      },
-    ]);
-    const Medium = await Question.aggregate([
-      {
-        $match: {
-          quizId: new mongoose.Types.ObjectId(quizId),
-          difficulty: "Medium",
-        },
-      },
-      {
-        $sample: {
-          size: 10,
-        },
-      },
-    ]);
-    const Hard = await Question.aggregate([
-      {
-        $match: {
-          quizId: new mongoose.Types.ObjectId(quizId),
-          difficulty: "Hard",
-        },
-      },
-      {
-        $sample: {
-          size: 10,
-        },
-      },
-    ]);
-    if (Easy.length === 0 || Medium.length === 0 || Hard.length === 0) {
+    if (!mongoose.Types.ObjectId.isValid(quizId)) {
       return res.status(400).json({
         success: false,
-        message: "Not enough questions",
+        message: "Invalid Quiz ID",
       });
     }
-    let studentImageUrl;
+    const runningAttempt = await Attempt.findOne({
+      user: userId,
+      quiz: quizId,
+      status: "RUNNING",
+    });
+
+    // if (runningAttempt) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "You already have a running quiz.",
+    //   });
+    // }
+
+    if (runningAttempt) {
+      const redisKey = `quiz:${runningAttempt._id}`;
+
+      const sessionData = await redisClient.get(redisKey);
+
+      if (sessionData) {
+        const session = JSON.parse(sessionData);
+
+        return res.status(200).json({
+          success: true,
+          resume: true,
+          message: "Resume your quiz.",
+          attemptId: runningAttempt._id,
+          question: session.currentQuestion,
+        });
+      }
+
+      // Redis session expired.
+      // Mark old attempt as expired and create a fresh one.
+
+      await Attempt.findByIdAndUpdate(runningAttempt._id, {
+        status: "EXPIRED",
+        completedAt: new Date(),
+      });
+
+      await Proctor.deleteOne({
+        attempt: runningAttempt._id,
+      });
+
+      console.log("Old quiz session expired. Creating new attempt...");
+    }
+    const [easyQuestions, mediumQuestions, hardQuestions] = await Promise.all([
+      Question.aggregate([
+        {
+          $match: {
+            quizId: new mongoose.Types.ObjectId(quizId),
+            difficulty: "Easy",
+          },
+        },
+        {
+          $sample: {
+            size: QUESTION_PER_DIFFICULTY,
+          },
+        },
+      ]),
+
+      Question.aggregate([
+        {
+          $match: {
+            quizId: new mongoose.Types.ObjectId(quizId),
+            difficulty: "Medium",
+          },
+        },
+        {
+          $sample: {
+            size: QUESTION_PER_DIFFICULTY,
+          },
+        },
+      ]),
+
+      Question.aggregate([
+        {
+          $match: {
+            quizId: new mongoose.Types.ObjectId(quizId),
+            difficulty: "Hard",
+          },
+        },
+        {
+          $sample: {
+            size: QUESTION_PER_DIFFICULTY,
+          },
+        },
+      ]),
+    ]);
+
+    console.log("Easy:", easyQuestions.length);
+    console.log("Medium:", mediumQuestions.length);
+    console.log("Hard:", hardQuestions.length);
+
+    if (
+      easyQuestions.length === 0 ||
+      mediumQuestions.length === 0 ||
+      hardQuestions.length === 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Not enough questions available.",
+      });
+    }
+    let studentImageUrl = "";
+
     if (req.file) {
-      const uploadResult = await uploadToCloudinary(req.file.buffer);
-      studentImageUrl = uploadResult.secure_url;
+      const upload = await uploadToCloudinary(req.file.buffer);
+
+      studentImageUrl = upload.secure_url;
     } else if (req.body.studentImageUrl) {
       studentImageUrl = req.body.studentImageUrl;
     } else {
       return res.status(400).json({
         success: false,
-        message: "Student photo required",
+        message: "Student photo is required.",
       });
     }
     const attempt = await Attempt.create({
@@ -94,66 +158,95 @@ export const startQuizAttempt = async (req, res) => {
       faceCount: 1,
     });
     const session = {
-      attemptId: attempt._id,
+      attemptId: attempt._id.toString(),
       quizId,
       userId,
-      Easy,
-      Medium,
-      Hard,
+      Easy: easyQuestions,
+      Medium: mediumQuestions,
+      Hard: hardQuestions,
       currentDifficulty: "Medium",
-      attempted: [Medium[0]._id],
+      currentQuestion: mediumQuestions[0],
+      attempted: [],
       answers: [],
       score: 0,
       maxScore: 0,
       totalAttempt: 0,
+      totalQuestions:
+        easyQuestions.length + mediumQuestions.length + hardQuestions.length,
     };
     const redisKey = `quiz:${attempt._id}`;
-    await redisClient.set(
-      redisKey,
-      JSON.stringify(session),
-      {
-        EX: 3600,
-      },
-    );
-   return res.status(200).json({
-     success: true,
-      message: "Quiz Started",
+    await redisClient.set(redisKey, JSON.stringify(session), {
+      EX: REDIS_EXPIRE_TIME,
+    });
+    return res.status(200).json({
+      success: true,
+      message: "Quiz started successfully.",
       attemptId: attempt._id,
-      question: Medium[0],
+      question: session.currentQuestion,
     });
   } catch (error) {
-    console.log(error);
+    console.error("Start Quiz Error:", error);
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message || "Internal Server Error",
     });
   }
 };
 
 export const submitAnswer = async (req, res) => {
   try {
-    const userId = req.user.id;
     const { attemptId } = req.params;
     const { questionId, answer } = req.body;
+
+    // -------------------------------------
+    // Validate Request
+    // -------------------------------------
+
+    if (!questionId || !answer) {
+      return res.status(400).json({
+        success: false,
+        message: "Question ID and answer are required.",
+      });
+    }
+
+    // -------------------------------------
+    // Get Quiz Session
+    // -------------------------------------
+
     const redisKey = `quiz:${attemptId}`;
-    let session = JSON.parse(await redisClient.get(redisKey));
-    if (!session) {
+
+    const sessionData = await redisClient.get(redisKey);
+
+    if (!sessionData) {
       return res.status(404).json({
         success: false,
-        message: "Quiz expired",
+        message: "Quiz session expired.",
+      });
+    }
+
+    const session = JSON.parse(sessionData);
+
+    // -------------------------------------
+    // Prevent Duplicate Submission
+    // -------------------------------------
+
+    if (session.attempted.includes(questionId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Question already answered.",
       });
     }
     const allQuestions = [...session.Easy, ...session.Medium, ...session.Hard];
-    const question = allQuestions.find((q) => q._id.toString() === questionId);
-    if (!question) {
+    const currentQuestion = allQuestions.find(
+      (question) => question._id.toString() === questionId,
+    );
+    if (!currentQuestion) {
       return res.status(404).json({
         success: false,
-        message: "Question not found",
+        message: "Question not found.",
       });
     }
-    // Evaluate answer
-    const evaluation = await evaluateAnswer(question, answer);
-    session.attempted.push(questionId);
+    const evaluation = await evaluateAnswer(currentQuestion, answer);
     session.answers.push({
       question: questionId,
       userAnswer: answer,
@@ -161,64 +254,124 @@ export const submitAnswer = async (req, res) => {
       maxScore: evaluation.maxScore,
       evaluationMethod: evaluation.evaluationMethod || evaluation.method,
       feedback: evaluation.feedback || "",
-      difficulty: question.difficulty,
+      difficulty: currentQuestion.difficulty,
     });
+    session.attempted.push(questionId);
     session.score += evaluation.score;
     session.maxScore += evaluation.maxScore;
     session.totalAttempt++;
     updateDifficulty(session, evaluation);
-    // Quiz finished
-    if (session.totalAttempt === 10) {
-      const percentage = (session.score / session.maxScore) * 100;
-      // FIRST save Redis data into MongoDB
+    if (session.totalAttempt >= session.totalQuestions) {
+      const percentage =
+        session.maxScore === 0
+          ? 0
+          : Number(((session.score / session.maxScore) * 100).toFixed(2));
+
       await Attempt.findByIdAndUpdate(session.attemptId, {
         questions: session.answers,
+
         totalScore: session.score,
+
         maxScore: session.maxScore,
+
         percentage,
+
         status: "COMPLETED",
+
         completedAt: new Date(),
       });
-      // AFTER SAVE remove redis
+
       await redisClient.del(redisKey);
+
       return res.status(200).json({
         success: true,
-        message: "Quiz Completed",
+
+        completed: true,
+
+        message: "Quiz completed successfully.",
+
         attemptId: session.attemptId,
-        score: session.score,
+
+        totalScore: session.score,
+
         maxScore: session.maxScore,
+
         percentage,
+
         answers: session.answers,
       });
     }
+
+    // -------------------------------------
+    // Next Question
+    // -------------------------------------
+
     const nextQuestion = getNextQuestion(session);
+
+    if (!nextQuestion) {
+      return res.status(500).json({
+        success: false,
+        message: "Unable to fetch next question.",
+      });
+    }
+
+    session.currentQuestion = nextQuestion;
     await redisClient.set(redisKey, JSON.stringify(session), {
-      EX: 3600,
+      EX: REDIS_EXPIRE_TIME,
     });
     return res.status(200).json({
       success: true,
+
+      completed: false,
+
       evaluation,
+
       nextQuestion,
+
+      currentDifficulty: session.currentDifficulty,
+
+      questionNumber: session.totalAttempt + 1,
+
+      remainingQuestions: session.totalQuestions - session.totalAttempt,
     });
   } catch (error) {
-    console.log(error);
+    console.error("Submit Answer Error:", error);
 
     return res.status(500).json({
       success: false,
-      message: "Server Error",
+      message: error.message || "Internal Server Error",
     });
   }
 };
 
 export const getAttemptResult = async (req, res) => {
   try {
+    const userId = req.user.id;
     const { attemptId } = req.params;
 
+    // ----------------------------
+    // Validate ObjectId
+    // ----------------------------
+
+    if (!mongoose.Types.ObjectId.isValid(attemptId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid Attempt ID",
+      });
+    }
+
+    // ----------------------------
+    // Find Attempt
+    // ----------------------------
+
     const attempt = await Attempt.findById(attemptId)
-      .populate("quiz", "title category difficulty")
+      .populate(
+        "quiz",
+        "title description category difficulty duration passingMarks totalMarks",
+      )
       .populate(
         "questions.question",
-        "question options correctAnswer explanation",
+        "question questionType options correctAnswer explanation difficulty marks",
       );
 
     if (!attempt) {
@@ -228,9 +381,24 @@ export const getAttemptResult = async (req, res) => {
       });
     }
 
+    // ----------------------------
+    // Security Check
+    // ----------------------------
+
+    if (attempt.user.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied",
+      });
+    }
+
+    // ----------------------------
+    // Response
+    // ----------------------------
+
     return res.status(200).json({
       success: true,
-
+      message: "Attempt fetched successfully",
       attempt,
     });
   } catch (error) {
@@ -238,7 +406,7 @@ export const getAttemptResult = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Server Error",
+      message: error.message,
     });
   }
 };
@@ -246,16 +414,30 @@ export const getUserAttempts = async (req, res) => {
   try {
     const userId = req.user.id;
 
+    // --------------------------------
+    // Fetch User Attempts
+    // --------------------------------
+
     const attempts = await Attempt.find({
       user: userId,
     })
-      .populate("quiz", "title category difficulty")
+      .populate(
+        "quiz",
+        "title description category difficulty duration totalMarks passingMarks",
+      )
       .sort({
         createdAt: -1,
-      });
+      })
+      .lean();
+
+    // --------------------------------
+    // Response
+    // --------------------------------
 
     return res.status(200).json({
       success: true,
+
+      message: "Attempts fetched successfully",
 
       total: attempts.length,
 
@@ -267,7 +449,7 @@ export const getUserAttempts = async (req, res) => {
     return res.status(500).json({
       success: false,
 
-      message: "Server Error",
+      message: error.message,
     });
   }
 };
