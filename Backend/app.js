@@ -13,7 +13,8 @@ dotenv.config();
 const app = express();
 app.use(
   cors({
-    origin: process.env.Frontend_URL,
+    // origin: process.env.Frontend_URL,
+    origin: "https://ai-adaptive-quiz-and-learning-proct-pi.vercel.app",
     credentials: true,
   }),
 );
