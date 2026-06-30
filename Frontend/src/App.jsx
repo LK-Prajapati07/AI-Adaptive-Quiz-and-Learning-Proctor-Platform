@@ -1,11 +1,12 @@
-import { useState } from 'react'
-
-import AppRouter from './router/AppRouter'
+import AppRouter from "@/router/AppRouter"
+import { ThemeProvider } from "next-themes"
 
 function App() {
-
-
-  return <AppRouter/>
+  return (
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <AppRouter />
+    </ThemeProvider>
+  )
 }
 
 export default App

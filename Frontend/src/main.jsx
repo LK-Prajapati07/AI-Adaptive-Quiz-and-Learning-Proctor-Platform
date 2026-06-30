@@ -13,6 +13,7 @@ import {
 import App from './App.jsx'
 import { Toaster } from "sonner"
 import { store } from './store/store'
+import AuthInit from './components/AuthInit'
 
 
 const queryClient = new QueryClient({
@@ -44,7 +45,7 @@ createRoot(document.getElementById('root')).render(
 
           <Toaster/>
 
-          <App/>
+          <AuthInit><App/></AuthInit>
 
         </BrowserRouter>
 

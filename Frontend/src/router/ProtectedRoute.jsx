@@ -1,39 +1,14 @@
-
-import { Spinner } from "@/components/ui/spinner"
-import { useGetCurrentUser } from "@/customHook/auth.hook"
 import { useSelector } from "react-redux"
-import { toast } from "sonner"
-const ProtectedRouter=({children})=>{
-    const user=useSelector((state)=>state.user)
-    const {error,isPending}=useGetCurrentUser()
-    if(error){
-        toast.error(error)
-    }
-    if(isPending){
-        return (
+import { Navigate } from "react-router-dom"
 
-            <div className="h-screen flex items-center justify-center">
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated } = useSelector((state) => state.auth)
 
-                <div className="bg-sky-600 p-5">
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />
+  }
 
-                    <Spinner />
-
-                </div>
-
-            </div>
-
-        );
-
-    }
-    if(!user){
-         return (
-            <Navigate 
-                to="/login"
-                replace
-            />
-        );
-    }
-    return children
-
+  return children
 }
-export default ProtectedRoute;
+
+export default ProtectedRoute
