@@ -14,7 +14,7 @@ class QuestionEvaluation(BaseModel):
 
     question: str
 
-    student_answer: str
+    student_answer: Optional[str]
 
     marks: int
 

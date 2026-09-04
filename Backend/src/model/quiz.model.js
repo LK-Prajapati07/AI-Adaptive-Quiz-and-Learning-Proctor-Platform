@@ -1,193 +1,129 @@
 import mongoose from "mongoose";
 
 
-const testCaseSchema = new mongoose.Schema(
-    {
-        input:{
-            type:String
-        },
-
-        output:{
-            type:String
-        }
-    },
-    {
-        _id:false
-    }
-)
-
-
-const questionSchema = new mongoose.Schema(
-    {
-
-        question:{
-            type:String,
-            required:true
-        },
-
-
-        options:{
-            type:[String],
-            default:[]
-        },
-
-
-        correctAnswer:{
-            type:String,
-            default:null
-        },
-
-
-        expectedAnswer:{
-            type:String,
-            default:null
-        },
-
-
-        language:{
-            type:String,
-            default:null
-        },
-
-
-        starterCode:{
-            type:String,
-            default:null
-        },
-
-
-        testCases:[
-            testCaseSchema
-        ],
-
-
-        marks:{
-            type:Number,
-            default:1
-        },
-
-
-        difficulty:{
-            type:String,
-            enum:[
-                "Easy",
-                "Medium",
-                "Hard"
-            ],
-            required:true
-        },
-
-
-        explanation:{
-            type:String
-        }
-
-    }
-)
-
-
-
 const quizSchema = new mongoose.Schema(
+  {
 
-{
-
-    quizTitle:{
-        type:String,
-        required:true
+    title: {
+      type: String,
+      required: true,
+      trim: true
     },
 
 
-    description:{
-        type:String,
-        required:true
+    description: {
+      type: String,
+      default: "",
+      trim: true
     },
-
-
-    category:{
-        type:String,
-
-        enum:[
-            "Programming",
-            "Aptitude",
-            "General_Knowledge",
-            "Science",
-            "Mathematics",
-            "English",
-            "Interview_Preparation"
-        ],
-
-        required:true
+    category: {
+      type: String,
+      enum: [
+        "Programming",
+        "Aptitude",
+        "General Knowledge",
+        "Science",
+        "Mathematics",
+        "English",
+        "Interview Preparation"
+      ],
+      required: true
     },
-
-
-    duration:{
-        type:Number,
-        required:true
+    difficulty: {
+      type: String,
+      enum: [
+        "Easy",
+        "Medium",
+        "Hard",
+        "Mixed"
+      ],
+      required: true
     },
-
-
-    difficulty_level:{
-        type:String,
-
-        enum:[
-            "Easy",
-            "Medium",
-            "Hard",
-            "Mixed"
-        ],
-
-        required:true
+   questionType: {
+      type: String, 
+      enum: [
+        "MCQ",
+        "TRUE_FALSE",
+        "FILL_BLANK",
+        "SUBJECTIVE",
+        
+      ],
+      required: true
     },
-
-
-    passing_marks:{
-        type:Number,
-        required:true
+    totalQuestions: {
+      type: Number,
+      required: true
     },
-
-
-    question_type:{
-        type:String,
-
-        enum:[
-            "MCQ",
-            "TRUE_FALSE",
-            "FILL_BLANK",
-            "SUBJECTIVE",
-            "CODE"
-        ],
-
-        required:true
+    // Cloudinary PDF URL
+    pdfUrl: {
+      type: String,
+      default: "",
+      required:true
     },
-
-
-    questions:[
-        questionSchema
-    ],
-
-
-    createdBy:{
-        type:mongoose.Schema.Types.ObjectId,
-        ref:"User",
-        required:true
+    duration: {
+      type: Number, // minutes
+      default: 30
     },
-
-
-    isPublished:{
-        type:Boolean,
-        default:false
+    passingMarks: {
+      type: Number,
+      default: 0
+    },
+    totalMarks: {
+      type: Number,
+      default: 0
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Auth",
+      required: true
+    },
+    // AI generation tracking
+    generationStatus: {
+      type: String,
+      enum: [
+        "PENDING",
+        "PROCESSING",
+        "COMPLETED",
+        "FAILED"
+      ],
+      default: "PENDING"
+    },
+    generatedBy: {
+      type: String,
+      enum: [
+        "AI",
+        "Manual"
+      ],
+      default: "AI"
+    },
+    status: {
+      type: String,
+      enum: [
+        "Draft",
+        "Published",
+        "Archived"
+      ],
+      default: "Draft"
+    },
+   isRandomized: {
+      type: Boolean,
+      default: true
+    },
+    isAdaptive: {
+      type: Boolean,
+      default: false
     }
+  },
 
-},
-
-{
+  {
     timestamps:true
-}
-
+  }
 )
 
 
-export const Quiz = mongoose.model(
-    "Quiz",
-    quizSchema
+
+export const Quiz =
+mongoose.model(
+  "Quiz",
+  quizSchema
 )

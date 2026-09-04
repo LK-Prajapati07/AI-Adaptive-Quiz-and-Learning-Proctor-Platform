@@ -4,16 +4,15 @@ import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 export const createUser = async (req, res) => {
   try {
     const { idToken,role} = req.body;
-    const allowedRoles = ["User", "Trainer", "Recruiter"];
     console.log(idToken)
-
+    const allowedRoles = ["Student", "Trainer", "Recruiter"];
+    console.log(idToken)
     if (!allowedRoles.includes(role)) {
       return res.status(403).json({
         success: false,
         message: "Invalid role",
       });
     }
-
     if (!idToken) {
       return res.status(401).json({
         success: false,
@@ -115,3 +114,14 @@ export const getCurrentUser = async (req, res) => {
     return res.status(500).json({ message: error.message, success: false });
   }
 };
+
+export const showAllUser=async(req,res)=>{
+  try {
+    
+  } catch (error) {
+    return res.status(500).json({
+      message:error.message,
+      success:false
+    })
+  }
+}

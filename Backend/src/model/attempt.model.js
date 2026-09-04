@@ -1,83 +1,86 @@
 import mongoose from "mongoose";
-const answerSchema=new mongoose.Schema({
-    question_id:{
-        type:mongoose.Schema.Types.ObjectId,
-        required:true
-    },
-    student_answer:{
-        type:String,
-        default:null
-    },
-    student_code:{
-        type:String,
-        default:null
-    },
-    isAnswered:{
-        type:Boolean,
-        required:true
+const attemptSchema = new mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Auth",
     },
 
-
-},
-{
-    _id:false
-}
-)
-const attemptQuestionSchema=new mongoose.Schema(
-    {
-        question_id:{
-            type:mongoose.Schema.Types.ObjectId,
-            required:true
-        },
-        question:{
-            type:String,
-            required:true
-        },
-        options:{
-            type:[String],
-            default:[]
-        },
-        marks:{
-            type:Number
-        }
+    quiz: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Quiz",
     },
-    {
-        _id:false
-    }
-)
 
-const attempSchema=new mongoose.Schema(
-    {
-        userId:{
-            type:mongoose.Schema.Types.ObjectId,
-            ref:"Auth",
-            required:true
+    questions: [
+      {
+        question: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Question",
         },
-        quizId:{
-            type:mongoose.Schema.Types.ObjectId,
-            ref:'Quiz',
-            required:true
+
+        userAnswer: {
+          type: String,
         },
-        assignedQuestion:[
-            attemptQuestionSchema
-        ],
-        answer:[
-            answerSchema
-        ],
-        startedAt:{
-            type:Date
+
+        expectedAnswer: {
+          type: String,
         },
-        status:{
-            type:String,
-            enum:["IN_Progress","Submited"],
-            default:"IN_Progress"
+        
+        score: {
+          type: Number,
         },
-        timeTaken:{
-            type:Number
-        }
+        
+
+        maxScore: {
+          type: Number,
+        },
+
+        similarityScore: {
+          type: Number,
+        },
+
+        evaluationMethod: {
+          type: String,
+
+          enum: ["EMBEDDING", "LLM", "NODE"],
+        },
+
+        feedback: String,
+
+        difficulty: {
+          type: String,
+        },
+      },
+    ],
+
+    totalScore: Number,
+
+    percentage: Number,
+    maxScore:Number,
+
+    startedAt: {
+      type: Date,
     },
-    {
-        timestamps:true
-    }
-)
-export const Attempt=mongoose.model("Attempt",attempSchema)
+
+    completedAt: {
+      type: Date,
+    },
+    status: {
+      type: String,
+
+      enum: ["RUNNING", "COMPLETED", "EXPIRED"],
+
+      default: "RUNNING",
+    },
+    studentImageUrl: {
+      type: String,
+      required: true,
+    },
+    
+  },
+  {
+
+    timestamps: true,
+  },
+);
+export const Attempt = mongoose.model("Attempt", attemptSchema);
